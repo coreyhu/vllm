@@ -1639,6 +1639,26 @@ class DPLBAsyncMPClient(DPAsyncMPClient):
         self.engine_inflight[chosen_engine] += 1
         return chosen_engine
 
+    async def reset_prefix_cache_async(
+        self, reset_running_requests: bool = False, reset_connector: bool = False
+    ) -> bool:
+        results = await asyncio.gather(
+            *[
+                self._call_utility_async(
+                    "reset_prefix_cache",
+                    reset_running_requests,
+                    reset_connector,
+                    engine=engine,
+                )
+                for engine in self.core_engines
+            ],
+            return_exceptions=True,
+        )
+        for result in results:
+            if isinstance(result, BaseException):
+                raise result
+        return all(results)
+
     async def call_utility_async(self, method: str, *args) -> Any:
         # Only the result from the first engine is returned.
         return (
